@@ -6,13 +6,21 @@
     apt:
       update_cache: yes
       state: present
-    when: ansible_os_family == "debian"         
+    when: ansible_os_family == "debian"    
   - name: install apache packages
-    package:
-      name: "{{ package_name }}"
+    apt:
+      name: "apache2"
       state: present
+    when: ansible_os_family == "debian"  
     notify:
-      - restart   
+      - restart   apache
+  - name: install httpd
+    yum: 
+      name: "httpd"
+      state: present
+    when: ansible_os_family == "rhel"
+    notify:
+      -restart  httpd  
   - name: install php
     package:
       name: "{{ item }}"
@@ -21,17 +29,25 @@
       - php
       - php-mysql
     notify:
-      - restart   
+      - restart   apache
+      - restart  httpd
   - name: copy infofiles
     copy:
-      src: info.php
+      src: /home/ansible/info/info.php
       dest: /var/www/html/info.php
+    notify:
+      - restart apache
+      - restart httpd 
   handlers:
-  - name: restart 
+  - name: restart apache
     service: 
-      name: "{{ package_name }}"
+      name: apache2
       state: restarted
-
-
+    when: ansible_os_family == "debian"  
+  - name: restart httpd 
+    service:
+      name: httpd
+      state: restarted
+    when: ansible_os_family == "rhel"  
 
 
